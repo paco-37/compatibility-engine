@@ -15,16 +15,14 @@ public class QuestionDAO {
 
     public List<Question> getAllQuestions() {
         List<Question> questions = new ArrayList<>();
-        
-        String sql = "SELECT q.id, q.question_text, q.weight, c.name " +
-                     "FROM questions q " +
-                     "JOIN categories c ON q.category_id = c.id";
 
-        try(Connection conn = DatabaseConnector.connect();
-        PreparedStatement pstmt = conn.prepareStatement(sql);
-        ResultSet rs = pstmt.executeQuery()) {
+        String sql = "SELECT q.id, q.question_text, q.weight, c.name "
+                + "FROM questions q "
+                + "JOIN categories c ON q.category_id = c.id";
 
-            while(rs.next()){
+        try (Connection conn = DatabaseConnector.connect(); PreparedStatement pstmt = conn.prepareStatement(sql); ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
                 int id = rs.getInt("id");
                 String text = rs.getString("question_text");
                 int weight = rs.getInt("weight");
@@ -40,7 +38,7 @@ public class QuestionDAO {
 
                 questions.add(q);
             }
-            
+
         } catch (SQLException e) {
             System.out.println("Fehler beim Laden der Fragen: " + e.getMessage());
             e.printStackTrace();
@@ -54,14 +52,13 @@ public class QuestionDAO {
 
         String sql = "SELECT * FROM options WHERE question_id = ?";
 
-        try (Connection conn = DatabaseConnector.connect();
-        PreparedStatement pstmt = conn.prepareStatement(sql)){
+        try (Connection conn = DatabaseConnector.connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, questionId);
 
-            try(ResultSet rs = pstmt.executeQuery()) {
+            try (ResultSet rs = pstmt.executeQuery()) {
 
-                while(rs.next()){
+                while (rs.next()) {
                     int id = rs.getInt("id");
                     int score = rs.getInt("score_value");
                     String text = rs.getString("option_text");
@@ -70,10 +67,70 @@ public class QuestionDAO {
                     options.add(o);
                 }
             }
-            
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return options;
+    }
+
+    public int addQuestion(Question q) {
+
+        String sql = "INSERT INTO questions (category_id, question_text, weight) VALUES (?, ?, ?)";
+        int generatedId = -1;
+
+        try (Connection conn = DatabaseConnector.connect(); PreparedStatement pstmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+
+            pstmt.setInt(1, 1);
+            pstmt.setString(2, q.getQuestionText());
+            pstmt.setInt(3, q.getWeight());
+
+            pstmt.executeUpdate();
+
+            try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    generatedId = rs.getInt(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return generatedId;
+
+    }
+
+    public void addOption(int questionId, String optionText, int optionScore) {
+        String sql = "INSERT INTO options (question_id, option_text, score_value) VALUES (?, ?, ?)";
+
+        try (Connection conn = DatabaseConnector.connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, questionId);
+            pstmt.setString(2, optionText);
+            pstmt.setInt(3, optionScore);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean deleteQuestion(int id) {
+        String sql = "DELETE FROM questions WHERE id = ?";
+
+        try (Connection conn = DatabaseConnector.connect(); 
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, id);
+
+            int rowsAffected = pstmt.executeUpdate();
+
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            System.out.println("Fehler beim Löschen: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
     }
 }
