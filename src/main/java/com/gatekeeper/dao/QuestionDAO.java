@@ -74,14 +74,14 @@ public class QuestionDAO {
         return options;
     }
 
-    public int addQuestion(Question q) {
+    public int addQuestion(Question q,int categoryId) {
 
         String sql = "INSERT INTO questions (category_id, question_text, weight) VALUES (?, ?, ?)";
         int generatedId = -1;
 
         try (Connection conn = DatabaseConnector.connect(); PreparedStatement pstmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
 
-            pstmt.setInt(1, 1);
+            pstmt.setInt(1, categoryId);
             pstmt.setString(2, q.getQuestionText());
             pstmt.setInt(3, q.getWeight());
 
